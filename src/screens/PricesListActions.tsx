@@ -1,7 +1,9 @@
 import { useNavigation } from '@react-navigation/core'
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, ScrollView } from 'react-native'
+
 import { Button } from '../components/Button'
+
 import colors from '../styles/colors'
 import fonts from '../styles/fonts'
 
@@ -27,7 +29,7 @@ const groupActions = [
 export function PricesListActions() {
     const navigator = useNavigation();
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>O que você deseja realizar?</Text>
             <View style={styles.actionsList}>
                 {groupActions.map(group => (
@@ -41,7 +43,7 @@ export function PricesListActions() {
                     </View>
                 ))}
             </View>
-        </View>
+        </ScrollView>
     )
 }
 

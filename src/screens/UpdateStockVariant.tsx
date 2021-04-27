@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'reac
 import StoreManage from '../services/store-manage'
 
 import colors from '../styles/colors'
+import fonts from '../styles/fonts'
 
 const LOJA_INTEGRADA_API_APP='410a8180-48cc-4c18-98f0-926ee17da110'
 const LOJA_INTEGRADA_MORAH_API_KEY='b25d760caf81ad23337d'
@@ -76,7 +77,9 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 25,
-        marginBottom: 30
+        marginBottom: 30,
+        fontFamily: fonts.heading,
+        color: colors.heading
     },
     form: {
         width: '100%'
