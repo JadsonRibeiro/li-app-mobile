@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TextInput } from 'react-native'
+import { View, Text, StyleSheet, TextInput, Alert, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
+import { StatusBar } from 'expo-status-bar'
 
 import { Button } from '../components/Button'
 
@@ -8,13 +9,50 @@ import colors from '../styles/colors'
 import fonts from '../styles/fonts'
 
 import { loadStores, Store } from '../libs/storage'
+import StoreManage from '../services/store-manage'
 
 export function AlterProductPrice() {
+    const [reference, setReference] = useState('');
+    const [newPrice, setNewPrice] = useState('');
     const [stores, setStores] = useState<Store[]>([]);
     const [selectedStore, setSelectedStore] = useState<Store>();
 
-    function handleAlterButtonPressed() {
-        console.log('Selected Store', selectedStore);    
+    function handlePriceChange(value: string) {
+        value = value.replace(/\D/g, '');
+        if(value.length === 1) {
+            value = `0.0${value}`;
+            return setNewPrice(value);
+        }
+
+        value = [value.slice(0, -2), value.slice(value.length - 2)].join('.');
+        value = Number(value).toFixed(2);
+
+        setNewPrice(value);
+    }
+
+    async function handleAlterButtonPressed() {
+        console.log('Ref', reference)
+        console.log('new Price', newPrice)
+        console.log('Selected Store', selectedStore);
+
+        if(!reference || !newPrice || !selectedStore)
+            return Alert.alert('Erro', 'Preencha todos campos');
+
+        const storeManage = new StoreManage(selectedStore.apiKey, selectedStore.apiApp);
+
+        try {
+            const priceObj = {
+                cheio: newPrice,
+                custo: '0.00',
+                promocional: '0.00'
+            };
+
+            await storeManage.updateAllChildrensPriceByParentSKU(reference, priceObj);
+            Alert.alert('Sucesso', 'Preço alterado!');
+        } catch(e) {
+            console.log('Erro when updating products price', e);
+            Alert.alert('Erro', 'Não foi possível alterar o preço');
+        }
     }
 
     useEffect(() => {
@@ -25,68 +63,85 @@ export function AlterProductPrice() {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Alterar Preço</Text>
-            <View style={styles.form}>
-                <View>
-                    <Text style={styles.label}>Referência</Text>
-                    <TextInput 
-                        style={styles.input}
-                        placeholder="Referência" 
-                    />
-                </View>
-                <View>
-                    <Text style={styles.label}>Novo preço</Text>
-                    <TextInput 
-                        style={styles.input}
-                        placeholder="Preço" 
-                    />
-                </View>
-                <View>
-                    <Text style={styles.label}>Loja</Text>
-                    <View style={styles.select}>
-                        <Picker
-                            accessibilityLabel="Escolha a loja"
-                            selectedValue={selectedStore}
-                            onValueChange={(store: Store) => setSelectedStore(store)}
-                        >
-                            {stores.map(store => (
-                                <Picker.Item 
-                                    key={store.apiKey}
-                                    label={store.name} 
-                                    value={store} />
-                            ))}
-                        </Picker>
+        <KeyboardAvoidingView 
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.inner}>                
+                    <Text style={styles.title}>Alterar Preço</Text>
+                    <View style={styles.form}>
+                        <View>
+                            <Text style={styles.label}>Referência</Text>
+                            <TextInput 
+                                style={styles.input}
+                                value={reference}
+                                onChangeText={(value) => setReference(value)}
+                                keyboardType="number-pad"
+                                placeholder="Referência" 
+                            />
+                        </View>
+                        <View>
+                            <Text style={styles.label}>Novo preço</Text>
+                            <TextInput 
+                                style={styles.input}
+                                value={newPrice}
+                                onChangeText={handlePriceChange}
+                                keyboardType="number-pad"
+                                placeholder="Preço" 
+                            />
+                        </View>
+                        <View>
+                            <Text style={styles.label}>Loja</Text>
+                            <View style={styles.select}>
+                                <Picker
+                                    accessibilityLabel="Escolha a loja"
+                                    selectedValue={selectedStore}
+                                    onValueChange={(store: Store) => setSelectedStore(store)}
+                                >
+                                    {stores.map(store => (
+                                        <Picker.Item 
+                                            key={store.apiKey}
+                                            label={store.name} 
+                                            value={store} />
+                                    ))}
+                                </Picker>
+                            </View>
+                        </View>
+                        <Button 
+                            text="Alterar" 
+                            onPress={handleAlterButtonPressed}
+                        />
                     </View>
                 </View>
-                <Button 
-                    text="Alterar" 
-                    onPress={handleAlterButtonPressed}
-                />
-            </View>
-        </View>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20
+        flex: 1
     },
+    inner: {
+        flex: 1,
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center'
+    }, 
     title: {
         fontSize: 30,
         marginBottom: 30,
         fontFamily: fonts.heading,
-        color: colors.heading
+        color: colors.heading,
     },
     form: {
-        width: '100%'
+        width: '100%',
     },
     label: {
-        fontSize: 15,
-        marginBottom: 10
+        fontSize: 20,
+        marginBottom: 10,
+        color: colors.heading
     }, 
     input: {
         width: '100%',
