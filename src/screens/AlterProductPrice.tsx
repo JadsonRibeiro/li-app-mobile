@@ -9,13 +9,32 @@ import colors from '../styles/colors'
 import fonts from '../styles/fonts'
 
 import { loadStores, Store } from '../libs/storage'
-import StoreManage from '../services/store-manage'
+import StoreManage, { Price } from '../services/store-manage'
 
 export function AlterProductPrice() {
     const [reference, setReference] = useState('');
     const [newPrice, setNewPrice] = useState('');
     const [stores, setStores] = useState<Store[]>([]);
     const [selectedStore, setSelectedStore] = useState<Store>();
+    const [loadedPrice, setLoadedPrice] = useState<Price>();
+
+    async function handleLoadPriceButtonPressed() {
+        if(!reference || !selectedStore) 
+            return Alert.alert('Erro', 'Informe a referência');
+
+        const storeManage = new StoreManage(selectedStore.apiKey, selectedStore.apiApp); 
+
+        try {
+            const priceValues = await storeManage.getAllChildrensPriceByParentSKU(reference);
+            if(priceValues) {
+                const childrenPrice = priceValues[0];
+                setLoadedPrice(childrenPrice);
+                setNewPrice(Number(childrenPrice.cheio).toFixed(2));
+            }
+        } catch(e) {
+            console.log('Erro', e);
+        }
+    }
 
     function handlePriceChange(value: string) {
         value = value.replace(/\D/g, '');
@@ -31,10 +50,6 @@ export function AlterProductPrice() {
     }
 
     async function handleAlterButtonPressed() {
-        console.log('Ref', reference)
-        console.log('new Price', newPrice)
-        console.log('Selected Store', selectedStore);
-
         if(!reference || !newPrice || !selectedStore)
             return Alert.alert('Erro', 'Preencha todos campos');
 
@@ -82,16 +97,6 @@ export function AlterProductPrice() {
                             />
                         </View>
                         <View>
-                            <Text style={styles.label}>Novo preço</Text>
-                            <TextInput 
-                                style={styles.input}
-                                value={newPrice}
-                                onChangeText={handlePriceChange}
-                                keyboardType="number-pad"
-                                placeholder="Preço" 
-                            />
-                        </View>
-                        <View>
                             <Text style={styles.label}>Loja</Text>
                             <View style={styles.select}>
                                 <Picker
@@ -108,10 +113,30 @@ export function AlterProductPrice() {
                                 </Picker>
                             </View>
                         </View>
-                        <Button 
-                            text="Alterar" 
-                            onPress={handleAlterButtonPressed}
-                        />
+                        {loadedPrice 
+                        ? (
+                            <>
+                                <View>
+                                    <Text style={styles.label}>Novo preço</Text>
+                                    <TextInput 
+                                        style={styles.input}
+                                        value={newPrice}
+                                        onChangeText={handlePriceChange}
+                                        keyboardType="number-pad"
+                                        placeholder="Preço" 
+                                    />
+                                </View>
+                                <Button 
+                                    text="Alterar" 
+                                    onPress={handleAlterButtonPressed}
+                                />
+                            </>
+                        ) : (
+                            <Button 
+                                text="Carregar valores" 
+                                onPress={handleLoadPriceButtonPressed}
+                            />
+                        )}
                     </View>
                 </View>
             </TouchableWithoutFeedback>

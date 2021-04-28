@@ -1,11 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-interface Price {
-    cheio: string;
-    custo: string;
-    promocional: string
-}
-
 interface Image {
     caminho: string;
     grande: string;
@@ -108,7 +102,7 @@ interface StockData {
     situacao_sem_estoque: number;
 }
 
-interface Price {
+export interface Price {
     cheio: string,
     custo: string,
     id?: string,
@@ -319,6 +313,21 @@ class Store {
         const product = await this.getSimpleProductDataBySKU(sku);
 
         return await this.getPriceByID(product.id);
+    }
+
+    async getAllChildrensPriceByParentSKU(parentSKU: string): Promise<Price[]> {
+        const product = await this.getSimpleProductDataBySKU(parentSKU);
+
+        const childrensPrices = [];
+        for (const filhoUri of product.filhos) {
+            const childrenId = filhoUri.split('/').pop();
+
+            if(childrenId) {
+                var childrenPrice = await this.getPriceByID(childrenId)
+                childrensPrices.push(childrenPrice)
+            }   
+        }
+        return childrensPrices;
     }
 
     async updatePriceByID(id: string, price: Price): Promise<AxiosResponse> {
